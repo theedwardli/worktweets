@@ -1,5 +1,6 @@
 import config
 import re 
+import json
 import tweepy 
 from tweepy import OAuthHandler 
 from textblob import TextBlob 
@@ -34,7 +35,7 @@ class TwitterClient(object):
         Utility function to clean tweet text by removing links, special characters 
             using simple regex statements. 
         '''
-        return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)", " ", tweet).split()) 
+        return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)", " ", tweet).split())
 
     def get_tweet_sentiment(self, tweet): 
         ''' 
@@ -60,17 +61,22 @@ class TwitterClient(object):
 
         try: 
             # Call Twitter api to fetch tweets 
-            fetched_tweets = self.api.search(q = query, count = count) 
+            fetched_tweets = tweepy.Cursor(self.api.search, 
+                                            q = query, 
+                                            tweet_mode = 'extended', 
+                                            include_rts = True)
+                                    .items(count)
 
             # Parsing tweets one by one 
             for tweet in fetched_tweets: 
                 # Empty dictionary to store required params of a tweet 
                 parsed_tweet = {} 
 
-                # Saving text of tweet 
-                parsed_tweet['text'] = tweet.text 
-                # Saving sentiment of tweet 
-                parsed_tweet['sentiment'] = self.get_tweet_sentiment(tweet.text) 
+                if 'retweeted_status' in tweet._json:
+                    parsed_tweet['text'] = tweet._json['retweeted_status']['full_text'].replace('\n', ' ')
+                else:
+                    parsed_tweet['text'] = tweet.full_text.replace('\n', ' ')
+                parsed_tweet['sentiment'] = self.get_tweet_sentiment(tweet.full_text) 
 
                 # Appending parsed tweet to tweets list 
                 if tweet.retweet_count > 0: 
@@ -92,7 +98,13 @@ def main():
     api = TwitterClient() 
     # Calling function to get tweets 
     tweets = api.get_tweets(query = 'work', count = 200) 
+    print len(tweets)
 
+    with open('worktweets.txt', 'a+') as f:
+        for tweet in tweets:
+            f.write("%s\n" % tweet['text'].encode('utf-8'))
+
+    """
     # Picking positive tweets from tweets 
     ptweets = [tweet for tweet in tweets if tweet['sentiment'] == 'positive'] 
     # Percentage of positive tweets 
@@ -115,6 +127,7 @@ def main():
     for tweet in ntweets[:5]: 
         print(tweet['text']) 
         print
+    """
 
 if __name__ == "__main__": 
     # Calling main function 

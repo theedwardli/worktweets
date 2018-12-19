@@ -60,12 +60,8 @@ class TwitterClient(object):
         tweets = [] 
 
         try: 
-            # Call Twitter api to fetch tweets 
-            fetched_tweets = tweepy.Cursor(self.api.search, 
-                                            q = query, 
-                                            tweet_mode = 'extended', 
-                                            include_rts = True)
-                                    .items(count)
+            # Call Twitter API to fetch tweets
+            fetched_tweets = tweepy.Cursor(self.api.search, q = query, tweet_mode = 'extended', include_rts = True).items(count)
 
             # Parsing tweets one by one 
             for tweet in fetched_tweets: 
@@ -96,38 +92,22 @@ class TwitterClient(object):
 def main(): 
     # Creating object of TwitterClient Class 
     api = TwitterClient() 
-    # Calling function to get tweets 
-    tweets = api.get_tweets(query = 'work', count = 200) 
-    print len(tweets)
 
-    with open('worktweets.txt', 'a+') as f:
+    # Calling function to get all tweets
+    tweets = api.get_tweets(query = 'work', count = 200) 
+
+    # Write tweets to file
+    with open('work_tweets.txt', 'a+') as f:
         for tweet in tweets:
             f.write("%s\n" % tweet['text'].encode('utf-8'))
 
-    """
-    # Picking positive tweets from tweets 
-    ptweets = [tweet for tweet in tweets if tweet['sentiment'] == 'positive'] 
-    # Percentage of positive tweets 
-    print("Positive tweets percentage: {} %".format(100*len(ptweets)/len(tweets))) 
-    # Picking negative tweets from tweets 
+    # Filter out the negative tweets from the list of all tweets
     ntweets = [tweet for tweet in tweets if tweet['sentiment'] == 'negative'] 
-    # Percentage of negative tweets 
-    print("Negative tweets percentage: {} %".format(100*len(ntweets)/len(tweets))) 
-    # Percentage of neutral tweets 
-    print("Neutral tweets percentage: {} %".format(100*(len(tweets) - len(ntweets) - len(ptweets))/len(tweets))) 
 
-    # printing first 5 positive tweets 
-    print("\n\nPositive tweets:") 
-    for tweet in ptweets[:5]: 
-        print(tweet['text'])
-        print 
-
-    # printing first 5 negative tweets 
-    print("\n\nNegative tweets:") 
-    for tweet in ntweets[:5]: 
-        print(tweet['text']) 
-        print
-    """
+    # Write negative tweets to file
+    with open('work_tweets_negative.txt', 'a+') as f:
+        for tweet in ntweets:
+            f.write("%s\n" % tweet['text'].encode('utf-8'))
 
 if __name__ == "__main__": 
     # Calling main function 
